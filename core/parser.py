@@ -18,16 +18,22 @@ class ESC_POS_Parser:
         for linea in lineas:
             linea = linea.strip()
             if not linea:
+                # Al enviar un newline, también reseteamos estilos para estar seguros
+                impresora.set(align="left", font="a", bold=False, underline=0, invert=False, width=1, height=1)
                 impresora.text("\n")
                 continue
 
-            # 1. Configuración por defecto de la línea
+            # 1. Configuración por defecto de la línea (Reseteo estricto)
             current_align = "left"
             current_bold = False
             current_underline = 0
             current_invert = False
             current_width = 1
             current_height = 1
+            
+            # Aplicamos el reseteo a la impresora antes de evaluar la línea
+            impresora.set(align=current_align, bold=current_bold, underline=current_underline, 
+                          invert=current_invert, width=current_width, height=current_height)
 
             # --- ELEMENTOS DE BLOQUE (Línea completa) ---
 

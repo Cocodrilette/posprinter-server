@@ -19,7 +19,8 @@ current_state = {
     "underline": 0,
     "invert": False,
     "font": "a",
-    "size": 1,
+    "width": 1,
+    "height": 1,
 }
 
 
@@ -63,19 +64,12 @@ def parse_escpos(data: bytes):
         nonlocal pending_text
         if pending_text:
             try:
-                # Forzamos ASCII para que los acentos y símbolos se rompan/reemplacen
-                # como en la impresora real
                 text = pending_text.decode("ascii", errors="replace")
                 virtual_paper.append(
                     {
                         "type": "text",
                         "text": text,
-                        "align": current_state["align"],
-                        "bold": current_state["bold"],
-                        "underline": current_state["underline"],
-                        "invert": current_state["invert"],
-                        "font": current_state["font"],
-                        "size": current_state["size"],
+                        **current_state.copy()
                     }
                 )
             except Exception as _:
@@ -92,7 +86,8 @@ def parse_escpos(data: bytes):
                     "bold": False,
                     "underline": 0,
                     "invert": False,
-                    "size": 1,
+                    "width": 1,
+                    "height": 1,
                 }
             )
             i += 2
@@ -124,7 +119,8 @@ def parse_escpos(data: bytes):
         elif data[i : i + 2] == b"\x1d\x21":
             flush_text()
             n = data[i + 2]
-            current_state["size"] = (n & 0x07) + 1  # Simplificado
+            current_state["width"] = ((n >> 4) & 0x07) + 1
+            current_state["height"] = (n & 0x07) + 1
             i += 3
         # GS B (Invert)
         elif data[i : i + 2] == b"\x1d\x42":
@@ -197,6 +193,7 @@ def parse_escpos(data: bytes):
 
 def tcp_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("0.0.0.0", 9100))
     server.listen(5)
     print("Printer Emulator listening on 9100...")
@@ -222,22 +219,31 @@ async def view_paper():
     lines_html = ""
     for item in virtual_paper:
         if item["type"] == "newline":
-            lines_html += '<div style="height: 1em;"></div>'
+            lines_html += '<div style="height: 1.2em;"></div>'
         elif item["type"] == "image":
             lines_html += f'<div style="text-align: {item["align"]}"><img src="data:image/png;base64,{item["data"]}" style="max-width: 100%;"></div>'
         elif item["type"] == "barcode":
-            lines_html += f'<div style="text-align: center; background: #e3f2fd; border: 1px dashed #2196f3; padding: 10px; margin: 5px 0; font-weight: bold; color: #1565c0;">[BARCODE: {item["text"]}]</div>'
+            lines_html += f'<div style="text-align: center; background: #e3f2fd; border: 1px dashed #2196f3; padding: 5px; margin: 5px 0; font-size: 10px; color: #1565c0;">[BC: {item["text"]}]</div>'
         else:
-            style = f"text-align: {item['align']}; "
-            style += "font-weight: bold; " if item["bold"] else ""
-            style += "text-decoration: underline; " if item["underline"] else ""
-            if item["invert"]:
-                style += "background: black; color: white; display: inline-block; width: 100%; "
-            style += f"font-size: {12 + item['size'] * 2}px; "
-            style += "font-style: italic; " if item["font"] == "b" else ""
-
+            # Estilos de texto realistas
+            inner_style = f"font-weight: {'bold' if item['bold'] else 'normal'};"
+            inner_style += f" text-decoration: {'underline' if item['underline'] else 'none'};"
+            if item['invert']: inner_style += " background: black; color: white;"
+            
+            # El escalado se hace con transform para no romper el flujo del texto ch
+            scale_x = item.get('width', 1)
+            scale_y = item.get('height', 1)
+            
+            wrapper_style = f"text-align: {item['align']};"
+            if scale_y > 1 or scale_x > 1:
+                wrapper_style += f" height: {scale_y * 1.2}em; margin-bottom: {(scale_y-1)*0.5}em;"
+            
             content = item["text"].replace(" ", "&nbsp;")
-            lines_html += f'<div style="{style} min-height: 1.2em;">{content}</div>'
+            
+            # Aplicar transformacion
+            transform = f"transform: scale({scale_x}, {scale_y}); transform-origin: {item['align']} top; display: inline-block;"
+            
+            lines_html += f'<div style="{wrapper_style}"><span style="{transform} {inner_style}">{content}</span></div>'
 
     hex_html = "".join(
         [
@@ -248,10 +254,10 @@ async def view_paper():
 
     return f"""
     <html>
-        <head><title>ESC/POS Emulator Pro</title><meta http-equiv="refresh" content="3">
+        <head><title>ESC/POS Emulator Pro</title><meta http-equiv="refresh" content="2">
         <style>
             body {{ background:#f0f0f0; color:#333; display:flex; flex-direction: column; align-items: center; padding:20px; font-family:sans-serif; }}
-            .paper { 
+            .paper {{ 
                 background:white; 
                 color:black; 
                 width: 32ch; 
@@ -260,12 +266,11 @@ async def view_paper():
                 min-height:500px; 
                 margin-bottom: 30px; 
                 font-family: 'Courier New', monospace; 
-                font-size: 16px;
+                font-size: 14px;
                 line-height: 1.2;
                 border-bottom: 2px dashed #ccc; 
-                overflow-wrap: break-word;
-                white-space: pre-wrap;
-            }
+                white-space: nowrap;
+            }}
             .debug-section {{ width: 80%; max-width: 900px; background: #222; border-radius: 8px; overflow: hidden; }}
             summary {{ padding: 15px; background: #333; color: #0f0; cursor: pointer; font-weight: bold; list-style: none; border-bottom: 1px solid #444; }}
             summary:hover {{ background: #444; }}
