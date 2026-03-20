@@ -2,6 +2,7 @@ import sys
 import os
 import secrets
 import random
+import math
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException
@@ -13,6 +14,7 @@ from core.auth import get_api_key, validate_physical_access
 from core.models import MarkdownData, LuckyData
 from core.parser import ESC_POS_Parser
 from core.printer import PrinterFactory
+from PIL import Image, ImageDraw
 
 load_dotenv()
 
@@ -25,13 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     BASE_DIR = sys._MEIPASS
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-import math
-from PIL import Image, ImageDraw
 
 FRASES_PROFUNDAS = [
     "Lo que buscas tambien te esta buscando a ti.",
@@ -43,29 +43,44 @@ FRASES_PROFUNDAS = [
     "No busques el camino, se tu mismo el camino.",
     "El universo no conspira contra ti, baila contigo.",
     "Confia en el proceso, incluso cuando no entiendas el mapa.",
-    "Tu pasado es una leccion, no una sentencia."
+    "Tu pasado es una leccion, no una sentencia.",
 ]
 
-def get_magic_star_image():
-    """Genera una imagen de una estrella resplandeciente con destellos"""
+
+def get_heart_image():
     size = 150
-    img = Image.new('1', (size, size), 1)
+    img = Image.new("1", (size, size), 1)
     draw = ImageDraw.Draw(img)
-    center_x, center_y = size // 2, size // 2
-    
-    # Dibujar estrella de 5 puntas
-    outer_radius, inner_radius = 50, 20
-    points = []
-    for i in range(10):
-        angle = i * math.pi / 5 - math.pi / 2
-        r = outer_radius if i % 2 == 0 else inner_radius
-        points.append((center_x + r * math.cos(angle), center_y + r * math.sin(angle)))
-    draw.polygon(points, fill=0)
-    
-    # Añadir destellos mágicos
-    for dx, dy, r in [(15,15,4), (135,15,5), (20,130,3), (130,130,4), (75,15,2)]:
-        draw.ellipse([dx-r, dy-r, dx+r, dy+r], fill=0)
+    # Dibujar corazón usando dos círculos y un triángulo
+    draw.ellipse([20, 20, 85, 85], fill=0)
+    draw.ellipse([65, 20, 130, 85], fill=0)
+    draw.polygon([(22, 65), (128, 65), (75, 140)], fill=0)
     return img
+
+
+def get_moon_image():
+    size = 150
+    img = Image.new("1", (size, size), 1)
+    draw = ImageDraw.Draw(img)
+    # Luna creciente: círculo negro restado por círculo blanco desplazado
+    draw.ellipse([20, 20, 130, 130], fill=0)
+    draw.ellipse([50, 10, 160, 120], fill=1)
+    return img
+
+
+def get_star_image():
+    size = 150
+    img = Image.new("1", (size, size), 1)
+    draw = ImageDraw.Draw(img)
+    cx, cy = 75, 75
+    pts = []
+    for i in range(10):
+        r = 60 if i % 2 == 0 else 25
+        a = i * math.pi / 5 - math.pi / 2
+        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    draw.polygon(pts, fill=0)
+    return img
+
 
 @app.get("/", response_class=HTMLResponse)
 def index():
@@ -73,11 +88,13 @@ def index():
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 
+
 @app.get("/lucky", response_class=HTMLResponse)
 def lucky():
     template_path = os.path.join(BASE_DIR, "templates", "lucky.html")
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
+
 
 @app.post("/print-md")
 def print_md(data: MarkdownData, api_key: str = Depends(get_api_key)):
@@ -92,33 +109,33 @@ def print_md(data: MarkdownData, api_key: str = Depends(get_api_key)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/lucky-print")
 def lucky_print(data: LuckyData, api_key: str = Depends(get_api_key)):
     try:
         if data.target == "physical":
             validate_physical_access(data.physical_key)
-        
+
         p = PrinterFactory.get_printer(data.target)
         frase = random.choice(FRASES_PROFUNDAS)
-        
-        # 1. Imprimir Estrella
+
+        # Selección aleatoria de icono para la suerte
+        icon_func = random.choice([get_heart_image, get_star_image, get_moon_image])
+
         p.set(align="center")
-        p.image(get_magic_star_image())
-        
-        # 2. Imprimir Mensaje
+        p.image(icon_func())
+
         p.set(align="center", bold=True, width=2, height=2)
         p.text(f"\n{ESC_POS_Parser.clean_text(frase)}\n\n")
-        
-        # 3. Pie decorativo
+
         p.set(width=1, height=1)
-        p.text("~ " * 10 + "\n")
-        p.text("QUE LAS ESTRELLAS TE GUIEN\n")
         p.text("\n\n\n\n\n")
         p.close()
-        
+
         return {"status": "ok", "frase": frase}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

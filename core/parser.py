@@ -74,10 +74,24 @@ class ESC_POS_Parser:
             if linea.startswith("!BC(") and linea.endswith(")"):
                 content = linea[4:-1]
                 impresora.set(align="center")
-                # Usamos {B como prefijo para CODE128 alfanumérico
-                impresora.barcode(
-                    "{B" + content, "CODE128", width=2, height=64, pos="BELOW"
-                )
+                impresora.barcode("{B" + content, "CODE128", width=2, height=64, pos="BELOW")
+                continue
+
+            # NUEVOS: Símbolos especiales
+            if linea == "!HEART()":
+                from server import get_heart_image
+                impresora.set(align="center")
+                impresora.image(get_heart_image())
+                continue
+            if linea == "!STAR()":
+                from server import get_star_image
+                impresora.set(align="center")
+                impresora.image(get_star_image())
+                continue
+            if linea == "!MOON()":
+                from server import get_moon_image
+                impresora.set(align="center")
+                impresora.image(get_moon_image())
                 continue
 
             # Alineaciones de bloque
