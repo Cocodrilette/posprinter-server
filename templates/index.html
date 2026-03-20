@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POS Markdown Editor</title>
+    <style>
+        body { font-family: sans-serif; display: flex; height: 100vh; margin: 0; background: #f4f4f9; }
+        .editor { flex: 1; display: flex; flex-direction: column; padding: 20px; border-right: 1px solid #ddd; }
+        .preview { flex: 1; display: flex; flex-direction: column; background: #333; }
+        textarea { flex: 1; font-family: monospace; padding: 15px; border: 1px solid #ccc; border-radius: 4px; resize: none; margin-bottom: 10px; }
+        .toolbar { margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 15px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1976d2; }
+        iframe { flex: 1; border: none; }
+        h2 { margin-top: 0; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="editor">
+        <h2>POS Print Editor</h2>
+        <div class="toolbar">
+            <input type="password" id="apiKey" placeholder="X-API-Key" value="mi_super_secreto_123">
+            <select id="target" onchange="togglePhysicalKey()">
+                <option value="emulator">Emulador</option>
+                <option value="physical">Impresora Física</option>
+            </select>
+            <input type="password" id="physicalKey" placeholder="Clave Física" style="display:none">
+            <button onclick="sendToPrint()">Imprimir</button>
+        </div>
+        <textarea id="markdown"># MI TICKET
+## Subtítulo
+---
+Este es un texto **importante** en negrita.
+- Producto A .... $10
+- Producto B .... $20
+---
+| TOTAL: $30
+---
+> ¡Vuelve pronto!</textarea>
+    </div>
+    <div class="preview">
+        <h2 style="color: white; padding: 10px; margin: 0; font-size: 16px;">Previsualización (Emulador)</h2>
+        <iframe id="emuFrame" src="http://localhost:8080"></iframe>
+    </div>
+
+    <script>
+        function togglePhysicalKey() {
+            const target = document.getElementById('target').value;
+            document.getElementById('physicalKey').style.display = target === 'physical' ? 'block' : 'none';
+        }
+
+        async function sendToPrint() {
+            const md = document.getElementById('markdown').value;
+            const key = document.getElementById('apiKey').value;
+            const target = document.getElementById('target').value;
+            const physicalKey = document.getElementById('physicalKey').value;
+            const emu = document.getElementById('emuFrame');
+
+            try {
+                const res = await fetch('/print-md', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': key 
+                    },
+                    body: JSON.stringify({ 
+                        markdown: md,
+                        target: target,
+                        physical_key: physicalKey
+                    })
+                });
+                
+                if (res.ok) {
+                    if (target === 'emulator') {
+                        emu.src = emu.src; // Refrescar previsualización
+                    } else {
+                        alert('Impresión enviada a la impresora física');
+                    }
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + (err.detail || 'Fallo en la autenticación'));
+                }
+            } catch (e) {
+                alert('Error de conexión con el servidor');
+            }
+        }
+    </script>
+</body>
+</html>

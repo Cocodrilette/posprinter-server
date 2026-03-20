@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>✨ Tu Suerte ✨</title>
+    <style>
+        body {
+            margin: 0;
+            background: radial-gradient(circle, #1a1a3a 0%, #050510 100%);
+            color: white;
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Modal de Acceso */
+        #access-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .modal-content {
+            background: #1a1a3a;
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #8a2be2;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+        }
+
+        input {
+            padding: 15px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            border: 1px solid #8a2be2;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            margin-bottom: 20px;
+            width: 250px;
+            text-align: center;
+        }
+
+        .btn-access {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Esfera y Pantalla Principal */
+        .crystal-ball {
+            width: 250px; height: 250px;
+            background: radial-gradient(circle at 30% 30%, #8a2be2, #000);
+            border-radius: 50%;
+            box-shadow: 0 0 60px rgba(138, 43, 226, 0.5), inset 0 0 40px rgba(255, 255, 255, 0.2);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            animation: float 4s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        .active { animation: shake 0.5s infinite !important; box-shadow: 0 0 100px #fff !important; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            40% { transform: translate(3px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            80% { transform: translate(3px, -1px) rotate(1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        #fortune-display {
+            margin-top: 50px;
+            font-size: 2.2em;
+            text-align: center;
+            max-width: 80%;
+            opacity: 0;
+            transition: all 1s ease-out;
+            font-style: italic;
+        }
+
+        #fortune-display.visible { opacity: 1; }
+
+        .instruction {
+            position: absolute; bottom: 50px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modal para pedir la clave física -->
+    <div id="access-modal">
+        <div class="modal-content">
+            <h2>🔐 Acceso Requerido</h2>
+            <p>Introduce la Clave de Impresión Física</p>
+            <input type="password" id="physKeyInput" placeholder="Clave Física...">
+            <br>
+            <button class="btn-access" onclick="unlock()">ENTRAR AL ORÁCULO</button>
+        </div>
+    </div>
+
+    <div class="crystal-ball" id="ball" onclick="reveal()">
+        <span>🔮</span>
+    </div>
+
+    <div id="fortune-display"></div>
+    <div class="instruction">Toca la esfera para ver tu destino</div>
+
+    <script>
+        let physicalKey = "";
+        let processing = false;
+
+        function unlock() {
+            const key = document.getElementById('physKeyInput').value;
+            if (key) {
+                physicalKey = key;
+                document.getElementById('access-modal').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('access-modal').style.display = 'none';
+                }, 500);
+            } else {
+                alert("La clave es necesaria para activar la magia.");
+            }
+        }
+
+        async function reveal() {
+            if (processing || !physicalKey) return;
+            processing = true;
+
+            const ball = document.getElementById('ball');
+            const display = document.getElementById('fortune-display');
+            
+            display.classList.remove('visible');
+            ball.classList.add('active');
+
+            try {
+                const res = await fetch('/lucky-print', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'mi_super_secreto_123' // API Key base (ajusta si la cambiaste)
+                    },
+                    body: JSON.stringify({ 
+                        nombre: "Invitado", 
+                        target: "physical", // Forzamos impresión física
+                        physical_key: physicalKey 
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    setTimeout(() => {
+                        ball.classList.remove('active');
+                        display.innerText = `"${data.frase}"`;
+                        display.classList.add('visible');
+                        processing = false;
+                    }, 1500);
+                } else {
+                    throw new Error(data.detail || "Fallo");
+                }
+            } catch (e) {
+                ball.classList.remove('active');
+                display.innerText = "La clave no parece correcta para este oráculo...";
+                display.classList.add('visible');
+                processing = false;
+                // Si la clave falló, volvemos a mostrar el modal tras 2 segundos
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+    </script>
+</body>
+</html>

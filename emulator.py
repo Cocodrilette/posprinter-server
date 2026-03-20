@@ -250,18 +250,29 @@ async def view_paper():
     <html>
         <head><title>ESC/POS Emulator Pro</title><meta http-equiv="refresh" content="3">
         <style>
-            body {{ background:#333; color:#eee; display:flex; padding:20px; font-family:monospace; gap:20px; }}
-            .paper {{ background:white; color:black; width:350px; padding:20px; box-shadow:0 0 20px #000; min-height:80vh; }}
-            .logs {{ flex:1; background:#1e1e1e; padding:20px; border-radius:8px; height:90vh; overflow-y:auto; color:#0f0; }}
-            button {{ background:#c0392b; color:white; border:none; padding:10px; cursor:pointer; margin-bottom:10px; }}
+            body {{ background:#f0f0f0; color:#333; display:flex; flex-direction: column; align-items: center; padding:20px; font-family:sans-serif; }}
+            .paper {{ background:white; color:black; width:350px; padding:30px; box-shadow:0 0 20px rgba(0,0,0,0.1); min-height:500px; margin-bottom: 30px; font-family: monospace; border-bottom: 2px dashed #ccc; }}
+            .debug-section {{ width: 80%; max-width: 900px; background: #222; border-radius: 8px; overflow: hidden; }}
+            summary {{ padding: 15px; background: #333; color: #0f0; cursor: pointer; font-weight: bold; list-style: none; border-bottom: 1px solid #444; }}
+            summary:hover {{ background: #444; }}
+            .logs {{ padding: 20px; max-height: 500px; overflow-y: auto; color: #0f0; font-family: monospace; }}
+            button {{ background:#c0392b; color:white; border:none; padding:10px 20px; cursor:pointer; margin-bottom:20px; border-radius: 4px; font-weight: bold; }}
+            button:hover {{ background: #a93226; }}
+            h2 {{ color: #555; margin-bottom: 10px; }}
         </style>
         </head>
         <body>
-            <div>
-                <form action="/clear" method="post"><button type="submit">Limpiar Todo</button></form>
-                <div class="paper">{lines_html}</div>
-            </div>
-            <div class="logs"><h2>HEX DEBUG</h2>{hex_html}</div>
+            <h2>Vista de Impresión</h2>
+            <form action="/clear" method="post"><button type="submit">Limpiar Papel</button></form>
+            
+            <div class="paper">{lines_html}</div>
+
+            <details class="debug-section">
+                <summary>🔍 Ver Depuración Técnica (HEX Logs)</summary>
+                <div class="logs">
+                    {hex_html}
+                </div>
+            </details>
         </body>
     </html>
     """
