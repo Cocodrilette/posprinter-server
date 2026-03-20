@@ -4,99 +4,139 @@ import secrets
 import random
 import math
 import uvicorn
+import threading
+import socket
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 # Importaciones locales
 from core.auth import get_api_key, validate_physical_access
 from core.models import MarkdownData, LuckyData
 from core.parser import ESC_POS_Parser
 from core.printer import PrinterFactory
-from PIL import Image, ImageDraw
+from core.emulator import EmulatorEngine
 
 load_dotenv()
 
-app = FastAPI(title="POS Printer Server", version="2.0.0")
+# Instancia del motor del emulador
+emu = EmulatorEngine()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# Configuración de plantillas
 if getattr(sys, "frozen", False):
     BASE_DIR = sys._MEIPASS
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+app = FastAPI(title="POS Printer Server Pro")
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+)
 
 
-FRASES_PROFUNDAS = [
-    "Lo que buscas tambien te esta buscando a ti.",
-    "El silencio es el lenguaje donde nacen las verdades.",
-    "Tu destino no es un lugar, sino una nueva forma de ver.",
-    "Incluso en la noche mas oscura, las estrellas no dejan de brillar.",
-    "Eres el arquitecto de tus propios laberintos.",
-    "La respuesta que necesitas ya vive en tu interior.",
-    "No busques el camino, se tu mismo el camino.",
-    "El universo no conspira contra ti, baila contigo.",
-    "Confia en el proceso, incluso cuando no entiendas el mapa.",
-    "Tu pasado es una leccion, no una sentencia.",
-]
+# --- EMULADOR TCP ---
+def start_tcp_emu():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        server.bind(("0.0.0.0", 9100))
+        server.listen(5)
+        while True:
+            client, _ = server.accept()
+            data = b""
+            try:
+                while True:
+                    chunk = client.recv(4096)
+                    if not chunk: break
+                    data += chunk
+            except Exception as e:
+                print(f"TCP Emu Recv Error: {e}")
+            
+            if data:
+                emu.parse(data)
+            client.close()
+    except Exception as e:
+        print(f"TCP Emu Server Error: {e}")
 
 
-def get_heart_image():
-    size = 150
-    img = Image.new("1", (size, size), 1)
-    draw = ImageDraw.Draw(img)
-    # Dibujar corazón usando dos círculos y un triángulo
-    draw.ellipse([20, 20, 85, 85], fill=0)
-    draw.ellipse([65, 20, 130, 85], fill=0)
-    draw.polygon([(22, 65), (128, 65), (75, 140)], fill=0)
-    return img
+# --- RUTAS ---
 
-
-def get_moon_image():
-    size = 150
-    img = Image.new("1", (size, size), 1)
-    draw = ImageDraw.Draw(img)
-    # Luna creciente: círculo negro restado por círculo blanco desplazado
-    draw.ellipse([20, 20, 130, 130], fill=0)
-    draw.ellipse([50, 10, 160, 120], fill=1)
-    return img
-
-
-def get_star_image():
-    size = 150
-    img = Image.new("1", (size, size), 1)
-    draw = ImageDraw.Draw(img)
-    cx, cy = 75, 75
-    pts = []
-    for i in range(10):
-        r = 60 if i % 2 == 0 else 25
-        a = i * math.pi / 5 - math.pi / 2
-        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
-    draw.polygon(pts, fill=0)
-    return img
+# Servir archivos estáticos del frontend (si existen)
+FRONTEND_PATH = os.path.join(BASE_DIR, "frontend", "dist")
+if os.path.exists(FRONTEND_PATH):
+    app.mount(
+        "/assets",
+        StaticFiles(directory=os.path.join(FRONTEND_PATH, "assets")),
+        name="assets",
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
-def index():
-    template_path = os.path.join(BASE_DIR, "templates", "index.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
+def index(request: Request):
+    # Si existe el build de React, servir su index.html
+    react_index = os.path.join(FRONTEND_PATH, "index.html")
+    if os.path.exists(react_index):
+        with open(react_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/lucky", response_class=HTMLResponse)
-def lucky():
-    template_path = os.path.join(BASE_DIR, "templates", "lucky.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
+def lucky(request: Request):
+    # Si existe el build de React, servir su index.html (React maneja la ruta)
+    react_index = os.path.join(FRONTEND_PATH, "index.html")
+    if os.path.exists(react_index):
+        with open(react_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return templates.TemplateResponse("lucky.html", {"request": request})
+
+@app.get("/emu-view", response_class=HTMLResponse)
+def emu_view(request: Request):
+    """Componente reutilizable del emulador (Legacy HTML)"""
+    return templates.TemplateResponse("emulator.html", {
+        "request": request, 
+        "paper": emu.virtual_paper,
+        "logs": emu.hex_logs
+    })
+
+@app.get("/api/emu-view")
+def emu_view_json():
+    """API para obtener el estado del emulador en JSON"""
+    return {
+        "paper": emu.virtual_paper,
+        "logs": emu.hex_logs
+    }
+
+@app.post("/api/preview")
+def preview_md(data: MarkdownData):
+    """Genera una previsualización instantánea sin usar TCP"""
+    try:
+        from escpos.printer import Dummy
+        d = Dummy()
+        ESC_POS_Parser.parse_to_printer(d, data.markdown)
+        d.text("\n\n")
+        
+        temp_emu = EmulatorEngine()
+        temp_emu.parse(d.output)
+        
+        return {
+            "paper": temp_emu.virtual_paper,
+            "logs": temp_emu.hex_logs
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/emu-clear")
+def emu_clear():
+    emu.clear()
+    return {"status": "ok"}
 
 
-@app.post("/print-md")
+@app.post("/api/print-md")
 def print_md(data: MarkdownData, api_key: str = Depends(get_api_key)):
     try:
         if data.target == "physical":
@@ -110,30 +150,27 @@ def print_md(data: MarkdownData, api_key: str = Depends(get_api_key)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/lucky-print")
+@app.post("/api/lucky-print")
 def lucky_print(data: LuckyData, api_key: str = Depends(get_api_key)):
     try:
         if data.target == "physical":
             validate_physical_access(data.physical_key)
-
         p = PrinterFactory.get_printer(data.target)
+        # Importamos dinámicamente para evitar circulares
+        from server_utils import get_star_image, FRASES_PROFUNDAS
+
         frase = random.choice(FRASES_PROFUNDAS)
-
-        # Selección aleatoria de icono para la suerte
-        icon_func = random.choice([get_heart_image, get_star_image, get_moon_image])
-
         p.set(align="center")
-        p.image(icon_func())
-
+        p.image(get_star_image())
         p.set(align="center", bold=True, width=2, height=2)
         p.text(f"\n{ESC_POS_Parser.clean_text(frase)}\n\n")
-
+        p.text("\n\n\n\n\n")
         p.close()
-
         return {"status": "ok", "frase": frase}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
+    threading.Thread(target=start_tcp_emu, daemon=True).start()
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

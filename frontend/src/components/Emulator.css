@@ -1,0 +1,93 @@
+.emulator-container {
+    background: #333;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    color: #333;
+}
+
+.emulator-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #444;
+}
+
+.virtual-paper {
+    background: white;
+    width: 32ch;
+    min-height: 400px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.2;
+    border-bottom: 2px dashed #ccc;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.emu-line {
+    width: 100%;
+    min-height: 1.2em;
+}
+
+.emu-text-span {
+    display: inline-block;
+}
+
+.emu-newline {
+    height: 1.2em;
+}
+
+.emu-image-container {
+    width: 100%;
+    margin: 5px 0;
+}
+
+.emu-image {
+    max-width: 100%;
+    display: block;
+}
+
+.emu-barcode {
+    text-align: center;
+    background: #e3f2fd;
+    border: 1px dashed #2196f3;
+    padding: 5px;
+    margin: 5px 0;
+    font-size: 10px;
+    color: #1565c0;
+}
+
+.hex-logs-section {
+    background: #222;
+    color: #0f0;
+    font-family: monospace;
+    font-size: 11px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 2px solid #555;
+}
+
+.hex-logs-section summary {
+    padding: 10px;
+    cursor: pointer;
+    background: #333;
+    user-select: none;
+}
+
+.hex-logs-content {
+    padding: 10px;
+}
+
+.hex-entry {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}

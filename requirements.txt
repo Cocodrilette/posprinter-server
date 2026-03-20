@@ -5,3 +5,6 @@ python-escpos
 python-barcode
 pillow
 qrcode
+jinja2
+python-multipart
+aiofiles

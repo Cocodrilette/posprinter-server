@@ -79,17 +79,17 @@ class ESC_POS_Parser:
 
             # NUEVOS: Símbolos especiales
             if linea == "!HEART()":
-                from server import get_heart_image
+                from server_utils import get_heart_image
                 impresora.set(align="center")
                 impresora.image(get_heart_image())
                 continue
             if linea == "!STAR()":
-                from server import get_star_image
+                from server_utils import get_star_image
                 impresora.set(align="center")
                 impresora.image(get_star_image())
                 continue
             if linea == "!MOON()":
-                from server import get_moon_image
+                from server_utils import get_moon_image
                 impresora.set(align="center")
                 impresora.image(get_moon_image())
                 continue

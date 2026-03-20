@@ -7,7 +7,16 @@ Servidor de impresión térmica para papel de 58mm. Proporciona una interfaz Mar
 2. Inicia el servidor: `python server.py`
 3. Inicia el emulador: `python emulator.py`
 
+## 🌐 Acceso desde la Red Local
+Para acceder desde otros dispositivos (móvil, tablet, etc.):
+1. Obtén tu IP local con `ipconfig`.
+2. Habilita los puertos en el Firewall de Windows usando el script incluido:
+   - Abre PowerShell como Administrador.
+   - Ejecuta: `.\manage_firewall.ps1 enable`
+3. Accede desde tu móvil a: `http://TU_IP:8000/lucky`
+
 ## 🔐 Seguridad
+...
 Todas las peticiones deben incluir el header:
 `X-API-Key: tu_clave_configurada`
 

@@ -1,0 +1,52 @@
+<html>
+<head>
+    <meta http-equiv="refresh" content="2">
+    <style>
+        body { 
+            background: white; margin: 0; padding: 10px; 
+            font-family: 'Courier New', monospace; font-size: 14px; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .paper { width: 32ch; white-space: nowrap; }
+        .newline { height: 1.2em; }
+        .barcode { 
+            text-align: center; background: #e3f2fd; border: 1px dashed #2196f3; 
+            padding: 5px; margin: 5px 0; font-size: 10px; color: #1565c0; 
+        }
+        details { width: 100%; margin-top: 20px; background: #222; color: #0f0; border-radius: 5px; }
+        summary { padding: 10px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="paper">
+        {% for item in paper %}
+            {% if item.type == 'newline' %}
+                <div class="newline"></div>
+            {% elif item.type == 'image' %}
+                <div style="text-align: {{item.align}}">
+                    <img src="data:image/png;base64,{{item.data}}" style="max-width: 100%;">
+                </div>
+            {% elif item.type == 'barcode' %}
+                <div class="barcode">[BC: {{item.text}}]</div>
+            {% else %}
+                <div style="text-align: {{item.align}}; font-weight: {{ 'bold' if item.bold else 'normal' }};">
+                    <span style="transform: scale({{item.width}}, {{item.height}}); transform-origin: {{item.align}} top; display: inline-block;">
+                        {{ item.text.replace(' ', '&nbsp;') | safe }}
+                    </span>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if logs %}
+    <details>
+        <summary>HEX LOGS</summary>
+        <div style="padding:10px; font-size: 10px;">
+            {% for log in logs | reverse %}
+                <pre>{{log}}</pre><hr style="border-color:#444">
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+</body>
+</html>
