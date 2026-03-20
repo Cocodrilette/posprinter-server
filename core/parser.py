@@ -1,19 +1,20 @@
 import unicodedata
 import re
 
+
 class ESC_POS_Parser:
     @staticmethod
     def clean_text(text: str) -> str:
         """Normaliza el texto para eliminar acentos y fuerza a ASCII"""
-        normalized = unicodedata.normalize('NFD', text)
-        cleaned = "".join(c for c in normalized if unicodedata.category(c) != 'Mn')
-        return cleaned.encode('ascii', 'ignore').decode('ascii')
+        normalized = unicodedata.normalize("NFD", text)
+        cleaned = "".join(c for c in normalized if unicodedata.category(c) != "Mn")
+        return cleaned.encode("ascii", "ignore").decode("ascii")
 
     @staticmethod
     def parse_to_printer(impresora, markdown_text: str):
         """Convierte Markdown extendido en comandos ESC/POS"""
         lineas = markdown_text.split("\n")
-        
+
         for linea in lineas:
             linea = linea.strip()
             if not linea:
@@ -63,12 +64,14 @@ class ESC_POS_Parser:
                 impresora.set(align="center")
                 impresora.qr(content, size=6, native=False)
                 continue
-            
+
             if linea.startswith("!BC(") and linea.endswith(")"):
                 content = linea[4:-1]
                 impresora.set(align="center")
                 # Usamos {B como prefijo para CODE128 alfanumérico
-                impresora.barcode("{B" + content, "CODE128", width=2, height=64, pos="BELOW")
+                impresora.barcode(
+                    "{B" + content, "CODE128", width=2, height=64, pos="BELOW"
+                )
                 continue
 
             # Alineaciones de bloque
@@ -79,6 +82,31 @@ class ESC_POS_Parser:
                 current_align = "right"
                 linea = linea[2:]
 
+            # Sintaxis: { Item : Valor }
+            if linea.startswith("{") and " : " in linea and linea.endswith("}"):
+                content = linea[1:-1]
+                parts = content.split(" : ", 1)
+                key = ESC_POS_Parser.clean_text(parts[0].strip())
+                val = ESC_POS_Parser.clean_text(parts[1].strip())
+
+                # Restricciones:
+                # Max 32 chars total. Reservamos 10 para el valor (derecha).
+                max_key_len = 20
+                max_val_len = 10
+
+                key = key[:max_key_len]
+                val = val[:max_val_len]
+
+                # Calcular puntos de relleno
+                dots = 32 - len(key) - len(val)
+                if dots < 1:
+                    dots = 1
+
+                linea_tabla = f"{key}{'.' * dots}{val}"
+                impresora.set(align="left", font="a")
+                impresora.text(linea_tabla + "\n")
+                continue
+
             # Listas y Checkboxes
             linea = linea.replace("[ ]", "[ ]").replace("[x]", "[X]")
             if linea.startswith("- ") or linea.startswith("* "):
@@ -88,9 +116,9 @@ class ESC_POS_Parser:
 
             # --- ELEMENTOS INLINE (Dentro de la línea) ---
             linea = ESC_POS_Parser.clean_text(linea)
-            
+
             # Parser de tokens para estilos mixtos
-            tokens = re.split(r'(\*\*|!!)', linea)
+            tokens = re.split(r"(\*\*|!!)", linea)
             bold_state = current_bold
             invert_state = current_invert
 
@@ -100,18 +128,33 @@ class ESC_POS_Parser:
                 underline=current_underline,
                 invert=invert_state,
                 width=current_width,
-                height=current_height
+                height=current_height,
             )
 
             for token in tokens:
-                if not token: continue
+                if not token:
+                    continue
                 if token == "**":
                     bold_state = not bold_state
-                    impresora.set(align=current_align, bold=bold_state, underline=current_underline, invert=invert_state, width=current_width, height=current_height)
+                    impresora.set(
+                        align=current_align,
+                        bold=bold_state,
+                        underline=current_underline,
+                        invert=invert_state,
+                        width=current_width,
+                        height=current_height,
+                    )
                 elif token == "!!":
                     invert_state = not invert_state
-                    impresora.set(align=current_align, bold=bold_state, underline=current_underline, invert=invert_state, width=current_width, height=current_height)
+                    impresora.set(
+                        align=current_align,
+                        bold=bold_state,
+                        underline=current_underline,
+                        invert=invert_state,
+                        width=current_width,
+                        height=current_height,
+                    )
                 else:
                     impresora.text(token)
-            
+
             impresora.text("\n")
