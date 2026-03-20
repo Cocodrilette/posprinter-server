@@ -1,4 +1,4 @@
-# POS Printer API Pro 🚀
+# POS Printer API
 
 Servidor de impresión térmica para papel de 58mm. Proporciona una interfaz Markdown simplificada y una experiencia interactiva para clientes.
 
@@ -10,8 +10,6 @@ Servidor de impresión térmica para papel de 58mm. Proporciona una interfaz Mar
 ## 🔐 Seguridad
 Todas las peticiones deben incluir el header:
 `X-API-Key: tu_clave_configurada`
-
-En **Modo Desarrollo** (ejecutando `.py`), las validaciones de API Key y Clave Física se omiten automáticamente.
 
 Si el destino es la impresora física (`target: "physical"`), se debe enviar adicionalmente el campo `physical_key` en el cuerpo del JSON.
 
@@ -32,6 +30,9 @@ Envía texto con formato Markdown personalizado.
 - `[ ]` y `[x]` : Checkboxes.
 - `!QR(contenido)` : Genera un código QR centrado.
 - `!BC(contenido)` : Genera un código de barras CODE128 centrado.
+- `!HEART()`: Genera un corazón centrado de tamaño similar a un QR.
+- `!MOON()`: Genera una luna centrada de tamaño similar a un QR.
+- `!STAR()`: Genera una estrella centrada de tamaño similar a un QR.
 
 ### POST `/lucky-print`
 Genera un ticket sorpresa con una estrella mágica y una frase profunda.
