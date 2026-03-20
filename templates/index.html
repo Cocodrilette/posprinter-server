@@ -27,16 +27,26 @@
             <input type="password" id="physicalKey" placeholder="Clave Física" style="display:none">
             <button onclick="sendToPrint()">Imprimir</button>
         </div>
-        <textarea id="markdown"># MI TICKET
-## Subtítulo
+        <textarea id="markdown"># TITULO GRANDE
+## Subtitulo Centrado
+### Encabezado pequeño
+===
+{ Hamburguesa : $12.50 }
+{ Papas Fritas : $4.00 }
+{ Refresco : $2.50 }
 ---
-Este es un texto **importante** en negrita.
-- Producto A .... $10
-- Producto B .... $20
+{ TOTAL : $19.00 }
+===
+[x] Pagado con Tarjeta
+[ ] Facturado
 ---
-| TOTAL: $30
+FOLIO: !!AB-1234!!
 ---
-> ¡Vuelve pronto!</textarea>
+!QR(https://example.com)
+!BC(AB1234)
+---
+| ¡Gracias por tu visita!
+> Atendido por: Bot</textarea>
     </div>
     <div class="preview">
         <h2 style="color: white; padding: 10px; margin: 0; font-size: 16px;">Previsualización (Emulador)</h2>

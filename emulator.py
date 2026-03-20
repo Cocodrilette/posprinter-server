@@ -251,7 +251,21 @@ async def view_paper():
         <head><title>ESC/POS Emulator Pro</title><meta http-equiv="refresh" content="3">
         <style>
             body {{ background:#f0f0f0; color:#333; display:flex; flex-direction: column; align-items: center; padding:20px; font-family:sans-serif; }}
-            .paper {{ background:white; color:black; width:350px; padding:30px; box-shadow:0 0 20px rgba(0,0,0,0.1); min-height:500px; margin-bottom: 30px; font-family: monospace; border-bottom: 2px dashed #ccc; }}
+            .paper { 
+                background:white; 
+                color:black; 
+                width: 32ch; 
+                padding: 20px; 
+                box-shadow:0 0 20px rgba(0,0,0,0.1); 
+                min-height:500px; 
+                margin-bottom: 30px; 
+                font-family: 'Courier New', monospace; 
+                font-size: 16px;
+                line-height: 1.2;
+                border-bottom: 2px dashed #ccc; 
+                overflow-wrap: break-word;
+                white-space: pre-wrap;
+            }
             .debug-section {{ width: 80%; max-width: 900px; background: #222; border-radius: 8px; overflow: hidden; }}
             summary {{ padding: 15px; background: #333; color: #0f0; cursor: pointer; font-weight: bold; list-style: none; border-bottom: 1px solid #444; }}
             summary:hover {{ background: #444; }}
