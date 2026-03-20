@@ -128,8 +128,6 @@ def lucky_print(data: LuckyData, api_key: str = Depends(get_api_key)):
         p.set(align="center", bold=True, width=2, height=2)
         p.text(f"\n{ESC_POS_Parser.clean_text(frase)}\n\n")
 
-        p.set(width=1, height=1)
-        p.text("\n\n\n\n\n")
         p.close()
 
         return {"status": "ok", "frase": frase}
