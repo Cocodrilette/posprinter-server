@@ -25,11 +25,13 @@ load_dotenv()
 # Instancia del motor del emulador
 emu = EmulatorEngine()
 
-# Configuración de plantillas
+# Configuración de plantillas e hilos
 if getattr(sys, "frozen", False):
+    # PyInstaller creates a temp folder and stores path in _MEIPASS
     BASE_DIR = sys._MEIPASS
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 app = FastAPI(title="POS Printer Server Pro")

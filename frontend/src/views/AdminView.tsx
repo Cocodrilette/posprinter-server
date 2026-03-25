@@ -23,6 +23,8 @@ FOLIO: !!AB-1234!!
 !QR(https://example.com)
 !BC(AB1234)
 ---
+!IMG(https://raw.githubusercontent.com/python-escpos/python-escpos/master/escpos/resources/escpos-logo.png)
+---
 !HEART()
 !MOON()
 !STAR()

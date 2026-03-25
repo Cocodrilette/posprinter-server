@@ -194,12 +194,17 @@ class EmulatorEngine:
                         self.virtual_paper.append({"type": "image", "data": b64, "align": self.current_state["align"]})
                 else: i += 4
 
+            # GS ( L nL nH m p1 p2 p3 p4 (Graphics commands - ignore complex ones)
+            elif data[i:i+3] == b'\x1d\x28\x4c':
+                if i + 5 < len(data):
+                    nL, nH = data[i+3], data[i+4]
+                    length = nH * 256 + nL
+                    i += 3 + 2 + length
+                else: i += 3
+
             # Saltos genéricos para comandos ESC / GS no manejados de 1 o 2 parámetros
             elif data[i:i+1] == b'\x1b' or data[i:i+1] == b'\x1d':
-                # Si llegamos aquí es un comando ESC/GS que no conocemos específicamente.
-                # Intentamos saltar basándonos en patrones comunes si no queremos que salgan caracteres raros.
-                # Pero por ahora solo lo tratamos como bytes de texto si no coinciden arriba.
-                # Para evitar caracteres raros, podemos "consumir" el ESC y el siguiente byte.
+                # Si es ESC (27) o GS (29), saltamos el siguiente byte por seguridad
                 i += 2 
             
             else:

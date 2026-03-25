@@ -47,12 +47,15 @@
 
 .emu-image-container {
     width: 100%;
-    margin: 5px 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
 }
 
 .emu-image {
     max-width: 100%;
     display: block;
+    image-rendering: pixelated; /* Mantiene los bordes nítidos de la impresora térmica */
 }
 
 .emu-barcode {
