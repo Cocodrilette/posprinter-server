@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment as Jinja2Env, FileSystemLoader
 
 # Importaciones locales
 from core.auth import get_api_key, validate_physical_access
@@ -32,7 +32,8 @@ if getattr(sys, "frozen", False):
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+_templates_dir = os.path.join(BASE_DIR, "templates")
+_jinja_env = Jinja2Env(loader=FileSystemLoader(_templates_dir), cache_size=0)
 
 app = FastAPI(title="POS Printer Server Pro")
 app.add_middleware(
@@ -84,7 +85,8 @@ def index(request: Request):
     if os.path.exists(react_index):
         with open(react_index, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return templates.TemplateResponse("index.html", {"request": request})
+    with open(os.path.join(_templates_dir, "index.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 
 @app.get("/lucky", response_class=HTMLResponse)
@@ -94,16 +96,14 @@ def lucky(request: Request):
     if os.path.exists(react_index):
         with open(react_index, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return templates.TemplateResponse("lucky.html", {"request": request})
+    with open(os.path.join(_templates_dir, "lucky.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 @app.get("/emu-view", response_class=HTMLResponse)
 def emu_view(request: Request):
     """Componente reutilizable del emulador (Legacy HTML)"""
-    return templates.TemplateResponse("emulator.html", {
-        "request": request, 
-        "paper": emu.virtual_paper,
-        "logs": emu.hex_logs
-    })
+    t = _jinja_env.get_template("emulator.html")
+    return HTMLResponse(content=t.render(paper=emu.virtual_paper, logs=emu.hex_logs))
 
 @app.get("/api/emu-view")
 def emu_view_json():

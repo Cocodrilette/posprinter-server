@@ -76,7 +76,7 @@ FOLIO: !!AB-1234!!
             const emu = document.getElementById('emuFrame');
 
             try {
-                const res = await fetch('/print-md', {
+                const res = await fetch('api/print-md', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
