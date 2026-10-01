@@ -54,6 +54,7 @@ Envía texto con formato Markdown personalizado.
 - `[ ]` y `[x]` : Checkboxes.
 - `!QR(contenido)` : Genera un código QR centrado.
 - `!BC(contenido)` : Genera un código de barras CODE128 centrado.
+- `!IMG(url)` : Descarga e imprime una imagen centrada desde una URL (máx. 320 px de ancho, convertida a blanco y negro con dithering). Si la descarga falla, la línea se omite.
 - `!HEART()`: Genera un corazón centrado de tamaño similar a un QR.
 - `!MOON()`: Genera una luna centrada de tamaño similar a un QR.
 - `!STAR()`: Genera una estrella centrada de tamaño similar a un QR.
