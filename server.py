@@ -67,6 +67,20 @@ def start_tcp_emu():
         print(f"TCP Emu Server Error: {e}")
 
 
+_tcp_emu_started = False
+
+
+@app.on_event("startup")
+def _launch_tcp_emu():
+    # Se inicia dentro del proceso que sirve la app (con reload=True el proceso
+    # padre es otro y su `emu` no sería el que lee la API).
+    global _tcp_emu_started
+    if not _tcp_emu_started:
+        _tcp_emu_started = True
+        threading.Thread(target=start_tcp_emu, daemon=True).start()
+        print(f"[POS PRINTER] Emulador TCP escuchando en {EMU_TCP_PORT}")
+
+
 # --- RUTAS ---
 
 # Servir archivos estáticos del frontend (si existen)
@@ -175,5 +189,4 @@ def lucky_print(data: LuckyData, api_key: str = Depends(get_api_key)):
 
 
 if __name__ == "__main__":
-    threading.Thread(target=start_tcp_emu, daemon=True).start()
     uvicorn.run("server:app", host=HOST, port=WEB_PORT, reload=True)

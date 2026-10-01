@@ -25,13 +25,10 @@ def run_gui():
 
 def run_server():
     try:
-        from server import app, start_tcp_emu
+        from server import app
         from core.config import HOST, WEB_PORT, EMU_TCP_PORT
         
-        # Start the TCP Emulator in a background thread (it was missing in the previous build)
-        print(f"[POS PRINTER] Starting TCP Emulator on port {EMU_TCP_PORT}...")
-        threading.Thread(target=start_tcp_emu, daemon=True).start()
-        
+        # The TCP Emulator is started by the app's startup hook (server.py)
         # Start Browser after a short delay
         def open_browser():
             sleep(2)
