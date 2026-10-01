@@ -3,6 +3,7 @@ import threading
 import uvicorn
 import io
 import base64
+from core.config import HOST, EMU_TCP_PORT, EMU_WEB_PORT
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from PIL import Image
@@ -194,9 +195,9 @@ def parse_escpos(data: bytes):
 def tcp_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("0.0.0.0", 9100))
+    server.bind((HOST, EMU_TCP_PORT))
     server.listen(5)
-    print("Printer Emulator listening on 9100...")
+    print(f"Printer Emulator listening on {EMU_TCP_PORT}...")
     while True:
         client, addr = server.accept()
         data = b""
@@ -229,20 +230,20 @@ async def view_paper():
             inner_style = f"font-weight: {'bold' if item['bold'] else 'normal'};"
             inner_style += f" text-decoration: {'underline' if item['underline'] else 'none'};"
             if item['invert']: inner_style += " background: black; color: white;"
-            
+
             # El escalado se hace con transform para no romper el flujo del texto ch
             scale_x = item.get('width', 1)
             scale_y = item.get('height', 1)
-            
+
             wrapper_style = f"text-align: {item['align']};"
             if scale_y > 1 or scale_x > 1:
                 wrapper_style += f" height: {scale_y * 1.2}em; margin-bottom: {(scale_y-1)*0.5}em;"
-            
+
             content = item["text"].replace(" ", "&nbsp;")
-            
+
             # Aplicar transformacion
             transform = f"transform: scale({scale_x}, {scale_y}); transform-origin: {item['align']} top; display: inline-block;"
-            
+
             lines_html += f'<div style="{wrapper_style}"><span style="{transform} {inner_style}">{content}</span></div>'
 
     hex_html = "".join(
@@ -257,18 +258,18 @@ async def view_paper():
         <head><title>ESC/POS Emulator Pro</title><meta http-equiv="refresh" content="2">
         <style>
             body {{ background:#f0f0f0; color:#333; display:flex; flex-direction: column; align-items: center; padding:20px; font-family:sans-serif; }}
-            .paper {{ 
-                background:white; 
-                color:black; 
-                width: 32ch; 
-                padding: 20px; 
-                box-shadow:0 0 20px rgba(0,0,0,0.1); 
-                min-height:500px; 
-                margin-bottom: 30px; 
-                font-family: 'Courier New', monospace; 
+            .paper {{
+                background:white;
+                color:black;
+                width: 32ch;
+                padding: 20px;
+                box-shadow:0 0 20px rgba(0,0,0,0.1);
+                min-height:500px;
+                margin-bottom: 30px;
+                font-family: 'Courier New', monospace;
                 font-size: 14px;
                 line-height: 1.2;
-                border-bottom: 2px dashed #ccc; 
+                border-bottom: 2px dashed #ccc;
                 white-space: nowrap;
             }}
             .debug-section {{ width: 80%; max-width: 900px; background: #222; border-radius: 8px; overflow: hidden; }}
@@ -283,7 +284,7 @@ async def view_paper():
         <body>
             <h2>Vista de Impresión</h2>
             <form action="/clear" method="post"><button type="submit">Limpiar Papel</button></form>
-            
+
             <div class="paper">{lines_html}</div>
 
             <details class="debug-section">
@@ -306,4 +307,4 @@ async def clear_paper():
 
 if __name__ == "__main__":
     threading.Thread(target=tcp_server, daemon=True).start()
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host=HOST, port=EMU_WEB_PORT)

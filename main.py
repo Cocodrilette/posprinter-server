@@ -26,21 +26,22 @@ def run_gui():
 def run_server():
     try:
         from server import app, start_tcp_emu
+        from core.config import HOST, WEB_PORT, EMU_TCP_PORT
         
         # Start the TCP Emulator in a background thread (it was missing in the previous build)
-        print("[POS PRINTER] Starting TCP Emulator on port 9100...")
+        print(f"[POS PRINTER] Starting TCP Emulator on port {EMU_TCP_PORT}...")
         threading.Thread(target=start_tcp_emu, daemon=True).start()
         
         # Start Browser after a short delay
         def open_browser():
             sleep(2)
-            print("[POS PRINTER] Opening browser at http://localhost:8000")
-            webbrowser.open("http://localhost:8000")
+            print(f"[POS PRINTER] Opening browser at http://localhost:{WEB_PORT}")
+            webbrowser.open(f"http://localhost:{WEB_PORT}")
         
         threading.Thread(target=open_browser, daemon=True).start()
 
-        print("[POS PRINTER] Starting Web Server on port 8000...")
-        uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, log_level="info")
+        print(f"[POS PRINTER] Starting Web Server on port {WEB_PORT}...")
+        uvicorn.run(app, host=HOST, port=WEB_PORT, reload=False, log_level="info")
         
     except Exception as e:
         print(f"\n[CRITICAL ERROR] Server failed to start: {e}")

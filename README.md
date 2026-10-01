@@ -7,6 +7,21 @@ Servidor de impresión térmica para papel de 58mm. Proporciona una interfaz Mar
 2. Inicia el servidor: `python server.py`
 3. Inicia el emulador: `python emulator.py`
 
+## ⚙️ Configuración (.env)
+| Variable | Default | Uso |
+|---|---|---|
+| `HOST` | `0.0.0.0` | Interfaz de escucha (`127.0.0.1` para solo local) |
+| `CORS_ORIGINS` | `*` | Orígenes permitidos, separados por coma |
+| `PRINT_SERVER_API_KEY` | `mi_super_secreto_123` | Header `X-API-Key` |
+| `PHYSICAL_PRINTER_KEY` | `admin_fisico_456` | Campo `physical_key` para imprimir en física |
+| `WEB_PORT` | `8000` | API y interfaz web |
+| `EMU_TCP_PORT` | `9100` | Emulador ESC/POS (TCP) |
+| `EMU_WEB_PORT` | `9021` | Vista web de `emulator.py` standalone |
+| `PHYSICAL_PRINTER_NAME` | `POS-58` | Impresora física (Windows) o cola CUPS (macOS/Linux, ver `lpstat -p`) |
+| `USB_VENDOR_ID` / `USB_PRODUCT_ID` | – | macOS/Linux: imprime por USB directo en vez de CUPS (`brew install libusb`; IDs con `ioreg -p IOUSB -l`) |
+
+`start_server.bat`, `manage_firewall.ps1` y el proxy de Vite también leen los puertos de `.env`. Ver `.env.example`.
+
 ## 🌐 Acceso desde la Red Local
 Para acceder desde otros dispositivos (móvil, tablet, etc.):
 1. Obtén tu IP local con `ipconfig`.

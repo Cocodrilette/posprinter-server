@@ -1,5 +1,14 @@
-$RuleName = "POS Printer Server (8000, 9100)"
-$Ports = "8000,9100"
+# Puertos desde .env (WEB_PORT, EMU_TCP_PORT), con valores por defecto
+$WebPort = "8000"; $EmuPort = "9100"
+$EnvFile = Join-Path $PSScriptRoot ".env"
+if (Test-Path $EnvFile) {
+    foreach ($line in Get-Content $EnvFile) {
+        if ($line -match '^\s*WEB_PORT\s*=\s*"?(\d+)"?') { $WebPort = $Matches[1] }
+        if ($line -match '^\s*EMU_TCP_PORT\s*=\s*"?(\d+)"?') { $EmuPort = $Matches[1] }
+    }
+}
+$RuleName = "POS Printer Server ($WebPort, $EmuPort)"
+$Ports = "$WebPort,$EmuPort"
 
 function Check-Admin {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())

@@ -19,6 +19,7 @@ from core.models import MarkdownData, LuckyData
 from core.parser import ESC_POS_Parser
 from core.printer import PrinterFactory
 from core.emulator import EmulatorEngine
+from core.config import HOST, WEB_PORT, EMU_TCP_PORT, CORS_ORIGINS
 
 load_dotenv()
 
@@ -37,7 +38,7 @@ _jinja_env = Jinja2Env(loader=FileSystemLoader(_templates_dir), cache_size=0)
 
 app = FastAPI(title="POS Printer Server Pro")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"]
 )
 
 
@@ -46,7 +47,7 @@ def start_tcp_emu():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        server.bind(("0.0.0.0", 9100))
+        server.bind((HOST, EMU_TCP_PORT))
         server.listen(5)
         while True:
             client, _ = server.accept()
@@ -58,7 +59,7 @@ def start_tcp_emu():
                     data += chunk
             except Exception as e:
                 print(f"TCP Emu Recv Error: {e}")
-            
+
             if data:
                 emu.parse(data)
             client.close()
@@ -121,10 +122,10 @@ def preview_md(data: MarkdownData):
         d = Dummy()
         ESC_POS_Parser.parse_to_printer(d, data.markdown)
         d.text("\n\n")
-        
+
         temp_emu = EmulatorEngine()
         temp_emu.parse(d.output)
-        
+
         return {
             "paper": temp_emu.virtual_paper,
             "logs": temp_emu.hex_logs
@@ -175,4 +176,4 @@ def lucky_print(data: LuckyData, api_key: str = Depends(get_api_key)):
 
 if __name__ == "__main__":
     threading.Thread(target=start_tcp_emu, daemon=True).start()
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host=HOST, port=WEB_PORT, reload=True)
